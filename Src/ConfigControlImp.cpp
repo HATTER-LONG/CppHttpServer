@@ -11,7 +11,7 @@ ConfigControlImp::ConfigControlImp()
         : m_sConfigFilePath(CONFIG_FILE_PATH + "Config.json")
         , m_jsonConfig(DEFAULT_SERVER_INFO)
 {
-    if (access(m_sConfigFilePath.c_str(), F_OK) != -1)
+    if (access(m_sConfigFilePath.c_str(), F_OK) == 0)
     {
         ifstream in(m_sConfigFilePath);
         in >> m_jsonConfig;
@@ -30,7 +30,7 @@ bool ConfigControlImp::setConfig(std::string Name, JSON::json Config)
 {
     m_jsonConfig[Name] = Config;
     ofstream o(m_sConfigFilePath);
-    o << setw(4) << DEFAULT_SERVER_INFO << endl;
+    o << setw(4) << m_jsonConfig << endl;
     return true;
 }
 }   // namespace Tooling

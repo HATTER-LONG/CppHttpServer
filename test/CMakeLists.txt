@@ -3,7 +3,7 @@ find_package(Catch2 REQUIRED CONFIG)
 FILE(GLOB TESTSRC 
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp" 
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cxx"
-    "${CMAKE_SOURCE_DIR}/Src/*.cpp")
+    "${CMAKE_SOURCE_DIR}/Src/ConfigControlImp.cpp")
 
 add_definitions(-DCONFIGFILE_FULLPATH="${CMAKE_CURRENT_SOURCE_DIR}/")
 

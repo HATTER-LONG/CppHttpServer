@@ -56,13 +56,14 @@ TEST_CASE("test create config control instance", "[ConfigSL]")
     SECTION("Test set config to file")
     {
         ConfigControlImp configControl;
-
-        bool result = configControl.setConfig("ServerInfo", DEFAULT_SERVER_INFO["ServerInfo"]);
+        json serverInfo = DEFAULT_SERVER_INFO["ServerInfo"];
+        serverInfo["IP"] = "0.0.0.0";
+        bool result = configControl.setConfig("ServerInfo", serverInfo);
         REQUIRE(result);
         json readIn;
         std::ifstream in(path);
         in >> readIn;
-        REQUIRE(readIn == DEFAULT_SERVER_INFO);
+        REQUIRE(readIn["ServerInfo"] == serverInfo);
     }
     remove(path.c_str());
 }

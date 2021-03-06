@@ -24,4 +24,5 @@ find_package(Threads)
 
 set(LOCAL_LINK_LIB spdlog::spdlog nlohmann_json::nlohmann_json pthread)
 
+add_subdirectory(Src)
 add_subdirectory(test)
