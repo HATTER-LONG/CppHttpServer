@@ -9,7 +9,9 @@ const JSON::json DEFAULT_SERVER_INFO = R"({
         "ServerInfo":{
             "IP":"192.168.1.1",
             "Port":80,
-            "threads":8
+            "threads":8,
+            "ReadTimeOut_S":100,
+            "WriteTimeOut_S":100
         }
     })"_json;
 

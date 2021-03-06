@@ -4,12 +4,12 @@
 
 namespace Tooling
 {
-class HttpServer
+class ReCallServer
 {
 public:
-    static HttpServer* instance()
+    static ReCallServer* instance()
     {
-        static HttpServer* svr = new HttpServer {};
+        static ReCallServer* svr = new ReCallServer {};
         return svr;
     }
 
@@ -17,7 +17,7 @@ public:
     void run();
 
 private:
-    HttpServer();
+    ReCallServer();
 
 private:
     std::string m_sIpAddr;

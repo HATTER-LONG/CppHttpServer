@@ -1,5 +1,5 @@
 #include "ConfigControlImp.h"
-#include "HttpServer.h"
+#include "ReCallServer.h"
 #include "ThreadPool.h"
 #include "spdlog/spdlog.h"
 
@@ -146,7 +146,7 @@ static void acceptErrorCb(struct evconnlistener* Listener, void* Ctx)
 
 namespace Tooling
 {
-HttpServer::HttpServer()
+ReCallServer::ReCallServer()
 {
     info("initialization httpServer >>>>>");
 
@@ -161,7 +161,7 @@ HttpServer::HttpServer()
     threadPool = new ThreadPool { static_cast<size_t>(m_iThreadNums) };
 }
 
-void HttpServer::run()
+void ReCallServer::run()
 {
     struct event_base* base = event_base_new();
     info("{} base ptr [{}]", __FUNCTION__, fmt::ptr(base));
