@@ -8,7 +8,7 @@ namespace Tooling
 const JSON::json DEFAULT_SERVER_INFO = R"({
         "ServerInfo":{
             "IP":"192.168.1.1",
-            "port":80,
+            "Port":80,
             "threads":8
         }
     })"_json;
