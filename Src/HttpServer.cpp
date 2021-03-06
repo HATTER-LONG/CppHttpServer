@@ -34,21 +34,14 @@ typedef struct Client
 
     /* The bufferedevent for this client. */
     struct bufferevent* m_bufEv;
-
-    /* Here you can add your own application-specific attributes which
-     * are connection-specific. */
 } client_t;
 
 static void onWrite(struct bufferevent* Bev, void* Arg) { }
 
 static void onReadCb(struct bufferevent* Bev, void* Ctx)
 {
-    /* 获取bufferevent中的读和写的指针 */
-    /* This callback is invoked when there is data to read on bev. */
     struct evbuffer* input = bufferevent_get_input(Bev);
     struct evbuffer* output = bufferevent_get_output(Bev);
-    /* 把读入的数据全部复制到写内存中 */
-    /* Copy all the data from the input buffer to the output buffer. */
     evbuffer_add_buffer(output, input);
 }
 static void echoEventCb(struct bufferevent* Bev, short Events, void* Ctx)
@@ -190,9 +183,7 @@ void HttpServer::run()
         warn("Listener init error\n");
         return;
     }
-    /* 设置 Listen 错误回调函数 */
     evconnlistener_set_error_cb(listener, acceptErrorCb);
-    /* 开始accept进入循环 */
     event_base_dispatch(base);
 
     event_base_free(base);
