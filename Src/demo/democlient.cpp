@@ -91,12 +91,12 @@ void init_read_event_thread(int sock)
 int main()
 {
     cout << "main started" << endl;   // prints Hello World!!!
-    cout << "Please input server IP:" << endl;
-    char ip[16];
-    cin >> ip;
-    cout << "Please input port:" << endl;
-    int port;
-    cin >> port;
+    // cout << "Please input server IP:" << endl;
+    char ip[16] = "0.0.0.0";
+    // cin >> ip;
+    // cout << "Please input port:" << endl;
+    int port = 8111;
+    // cin >> port;
     cout << "ServerIP is " << ip << " ,port=" << port << endl;
     int socket_fd = connectServer(ip, port);
     cout << "socket_fd=" << socket_fd << endl;

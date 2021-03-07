@@ -2,7 +2,7 @@
     "ServerInfo": {
         "IP": "0.0.0.0",
         "Port": 8111,
-        "threads": 3,
+        "threads": 1,
         "ReadTimeOut_S": 1000,
         "WriteTimeOut_S": 1000
     }

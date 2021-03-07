@@ -4,6 +4,7 @@
 #include "spdlog/spdlog.h"
 
 #include <arpa/inet.h>
+#include <cstddef>
 #include <cstring>
 #include <event2/buffer.h>
 #include <event2/bufferevent.h>
@@ -26,14 +27,12 @@ ThreadPool* threadPool;
  */
 typedef struct Client
 {
-    /* The client's socket. */
-    int m_fd;
-
     /* The event_base for this client. */
     struct event_base* m_evbase;
 
     /* The bufferedevent for this client. */
     struct bufferevent* m_bufEv;
+
 } client_t;
 
 static void onWrite(struct bufferevent* Bev, void* Arg) { }
@@ -48,28 +47,23 @@ static void echoEventCb(struct bufferevent* Bev, short Events, void* Ctx)
 {
     info("{} receive event[{}]", __FUNCTION__, Events);
 }
-static void closeClient(client_t* Client)
-{
-    if (Client != NULL)
-    {
-        if (Client->m_fd >= 0)
-        {
-            close(Client->m_fd);
-            Client->m_fd = -1;
-        }
-    }
-}
+
+static int threadNums = 0;
+static vector<struct Client*> clientVector;
+static int baseIndex = 0;
 
 static void closeAndFreeClient(client_t* Client)
 {
+    for (auto iter = clientVector.begin(); iter != clientVector.end(); iter++)
+    {
+        if (*iter.base() == Client)
+        {
+            clientVector.erase(iter);
+            break;
+        }
+    }
     if (Client != NULL)
     {
-        closeClient(Client);
-        if (Client->m_bufEv != NULL)
-        {
-            bufferevent_free(Client->m_bufEv);
-            Client->m_bufEv = NULL;
-        }
         if (Client->m_evbase != NULL)
         {
             event_base_free(Client->m_evbase);
@@ -78,27 +72,35 @@ static void closeAndFreeClient(client_t* Client)
         free(Client);
     }
 }
-
 static void serverJobFunction(struct Client* Client)
 {
     event_base_dispatch(Client->m_evbase);
     closeAndFreeClient(Client);
 }
-
 static void onAcceptCb(struct evconnlistener* Listener, evutil_socket_t Fd, struct sockaddr* Addr, int Socklen, void* Ctx)
 {
-    struct Client* client = new Client;
-    memset(client, 0, sizeof(*client));
-    client->m_fd = Fd;
-
-    if ((client->m_evbase = event_base_new()) == NULL)
+    struct Client* client = NULL;
+    bool addThreadPool = false;
+    if (clientVector.size() < threadNums)
     {
-        warn("client event_base creation failed");
-        closeAndFreeClient(client);
-        return;
+        client = new Client;
+        memset(client, 0, sizeof(*client));
+        if ((client->m_evbase = event_base_new()) == NULL)
+        {
+            warn("client event_base creation failed");
+            closeAndFreeClient(client);
+            return;
+        }
+        clientVector.push_back(client);
+        addThreadPool = true;
+    }
+    else
+    {
+        client = clientVector[baseIndex];
+        baseIndex = ++baseIndex == clientVector.size() ? 0 : baseIndex;
     }
 
-    if ((client->m_bufEv = bufferevent_socket_new(client->m_evbase, Fd, 0)) == NULL)
+    if ((client->m_bufEv = bufferevent_socket_new(client->m_evbase, Fd, BEV_OPT_CLOSE_ON_FREE)) == NULL)
     {
         warn("client bufferevent creation failed");
         closeAndFreeClient(client);
@@ -121,8 +123,8 @@ static void onAcceptCb(struct evconnlistener* Listener, evutil_socket_t Fd, stru
      * We have to enable it before our callbacks will be called.
      */
     bufferevent_enable(client->m_bufEv, EV_READ | EV_WRITE);
-
-    threadPool->enqueue(serverJobFunction, client);
+    if (addThreadPool)
+        threadPool->enqueue(serverJobFunction, client);
 }
 
 static void acceptErrorCb(struct evconnlistener* Listener, void* Ctx)
@@ -149,6 +151,7 @@ HttpServer::HttpServer()
     m_sIpAddr = serverConfigInfo["IP"].get<string>();
     m_iPort = serverConfigInfo["Port"].get<int>();
     m_iThreadNums = serverConfigInfo["threads"].get<int>();
+    threadNums = m_iThreadNums;
     socketReadTimeoutSeconds = serverConfigInfo["ReadTimeOut_S"].get<int>();
     socketWriteTimeoutSeconds = serverConfigInfo["WriteTimeOut_S"].get<int>();
     threadPool = new ThreadPool { static_cast<size_t>(m_iThreadNums) };
