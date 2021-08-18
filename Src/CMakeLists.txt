@@ -7,5 +7,5 @@ add_definitions(-DCONFIGFILE_FULLPATH="${CMAKE_CURRENT_SOURCE_DIR}/")
 set(PROJECTNAME CppHttpServer)
 add_executable(${PROJECTNAME} ${PROSRC})
 
-target_link_libraries(${PROJECTNAME} ${LOCAL_LINK_LIB} -levent -levent_pthreads)
+target_link_libraries(${PROJECTNAME} ${LOCAL_LINK_LIB})
 add_subdirectory(demo)

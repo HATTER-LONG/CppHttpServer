@@ -13,7 +13,6 @@
 #include <event2/listener.h>
 #include <event2/thread.h>
 #include <netinet/in.h>
-#include <spdlog/fmt/bundled/format.h>
 #include <sys/socket.h>
 #include <unistd.h>
 using namespace spdlog;

@@ -14,4 +14,4 @@ set(PROJECTNAME CppHttpServerTest)
 
 add_executable(${PROJECTNAME} ${TESTSRC})
 
-target_link_libraries(${PROJECTNAME} ${LOCAL_LINK_LIB} -levent -levent_pthreads)
+target_link_libraries(${PROJECTNAME} ${LOCAL_LINK_LIB})
