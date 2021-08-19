@@ -1,9 +1,11 @@
 #include "Infra/FactoryTemplate.h"
+#include "ThreadCompetition.hpp"
 #include "catch2/catch.hpp"
 #include "spdlog/spdlog.h"
 
 #include <memory>
 #include <string>
+#include <thread>
 
 class BaseClass
 {
@@ -101,6 +103,39 @@ TEST_CASE("Test the factory template function of a product", "[factory template 
                 REQUIRE(oneProduct4DerivedClass != nullptr);
                 REQUIRE(oneProduct4DerivedClass->getClassProductId() == DerivedClass::productId());
             }
+        }
+    }
+}
+
+
+
+TEST_CASE("Test the factory template function mulithread env get product", "[factory template test]")
+{
+    auto getProductF = []
+    {
+        auto ret = g_BaseClassFactory::instance().getProductClass(DerivedClass::productId());
+        REQUIRE(ret != nullptr);
+    };
+    auto registProductF = []
+    { Tooling::ProductClassRegistrar<class BaseClass, class DerivedClass> registProduct(DerivedClass::productId()); };
+
+    GIVEN("Factory with a product")
+    {
+        Tooling::ProductClassRegistrar<class BaseClass, class DerivedClass> registProduct(DerivedClass::productId());
+        WHEN("Registration and acquisition occur at the same time ")
+        {
+            const auto threadsnum = 5;
+
+            ThreadCompetition workers(threadsnum);
+
+            for (int i = 0; i < threadsnum; i++)
+            {
+                if (i == 1)
+                    workers.enqueue(registProductF, i);
+                else
+                    workers.enqueue(getProductF, i);
+            }
+            workers.notifyAllThreads();
         }
     }
 }

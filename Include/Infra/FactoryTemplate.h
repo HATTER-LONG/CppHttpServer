@@ -3,12 +3,8 @@
 #include "spdlog/spdlog.h"
 
 #include <map>
+#include <mutex>
 #include <string>
-
-/**
- * TODO: 多线程支持，单例支持，多参数模板支持
- *
- */
 
 namespace Tooling
 {
@@ -61,9 +57,12 @@ public:
      *
      * @param registry
      * @param ID
+     *
+     * @return bool 是否插入成功
      */
-    void registerClassWithId(IProductClassRegistrar<CustomProductType_t>* Registry, std::string ID)
+    bool registerClassWithId(IProductClassRegistrar<CustomProductType_t>* Registry, std::string ID)
     {
+        std::lock_guard<std::mutex> lk(m_mutex);
         auto iter = m_mapProductClassRegistry.find(ID);
         if (iter != m_mapProductClassRegistry.end())
         {
@@ -71,9 +70,10 @@ public:
                          "ID[{}] into the factory, pls check it",
                 __FUNCTION__, ID.c_str());
 
-            return;
+            return false;
         }
         m_mapProductClassRegistry[ID] = Registry;
+        return true;
     }
 
     /**
@@ -84,6 +84,7 @@ public:
      */
     std::unique_ptr<CustomProductType_t> getProductClass(std::string ID)
     {
+        std::lock_guard<std::mutex> lk(m_mutex);
         if (m_mapProductClassRegistry.find(ID) != m_mapProductClassRegistry.end())
         {
             return m_mapProductClassRegistry[ID]->createProduct();
@@ -99,6 +100,7 @@ public:
      */
     void removeProductClassByID(std::string ProduceId)
     {
+        std::lock_guard<std::mutex> lk(m_mutex);
         auto iter = m_mapProductClassRegistry.find(ProduceId);
         if (iter != m_mapProductClassRegistry.end())
         {
@@ -121,6 +123,12 @@ private:
      *
      */
     std::map<std::string, IProductClassRegistrar<CustomProductType_t>*> m_mapProductClassRegistry;
+
+    /**
+     * @brief 多线程同步锁，成本待考量
+     *
+     */
+    std::mutex m_mutex;
 };
 
 /**
@@ -142,7 +150,7 @@ public:
     explicit ProductClassRegistrar(std::string ID)
             : m_customProductImplId(ID)
     {
-        ProductClassFactory<CustomProductType_t>::instance().registerClassWithId(this, ID);
+        m_needDelete = ProductClassFactory<CustomProductType_t>::instance().registerClassWithId(this, ID);
     }
     /**
      * @brief 删除析构掉的产品注册器 Destroy the Product Class Registrar object
@@ -150,7 +158,8 @@ public:
      */
     ~ProductClassRegistrar()
     {
-        ProductClassFactory<CustomProductType_t>::instance().removeProductClassByID(m_customProductImplId);
+        if (m_needDelete)
+            ProductClassFactory<CustomProductType_t>::instance().removeProductClassByID(m_customProductImplId);
     }
     /**
      * @brief Create a Product object
@@ -164,5 +173,6 @@ public:
 
 private:
     std::string m_customProductImplId;
+    bool m_needDelete;
 };
 }   // namespace Tooling

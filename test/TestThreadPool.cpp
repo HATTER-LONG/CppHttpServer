@@ -1,4 +1,4 @@
-#include "ThreadPool.h"
+#include "Infra/ThreadPool.h"
 #include "catch2/catch.hpp"
 
 #include <iostream>

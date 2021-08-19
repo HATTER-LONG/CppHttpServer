@@ -35,22 +35,24 @@ inline ThreadPool::ThreadPool(size_t Threads)
         : m_stop(false)
 {
     for (size_t i = 0; i < Threads; ++i)
-        m_workers.emplace_back([this] {
-            for (;;)
+        m_workers.emplace_back(
+            [this]
             {
-                std::function<void()> task;
+                for (;;)
                 {
-                    std::unique_lock<std::mutex> lock(this->m_queueMutex);
-                    this->m_condition.wait(lock, [this] { return this->m_stop || !this->m_tasks.empty(); });
-                    if (this->m_stop && this->m_tasks.empty())
-                        return;
-                    task = std::move(this->m_tasks.front());
-                    this->m_tasks.pop();
-                }
+                    std::function<void()> task;
+                    {
+                        std::unique_lock<std::mutex> lock(this->m_queueMutex);
+                        this->m_condition.wait(lock, [this] { return this->m_stop || !this->m_tasks.empty(); });
+                        if (this->m_stop && this->m_tasks.empty())
+                            return;
+                        task = std::move(this->m_tasks.front());
+                        this->m_tasks.pop();
+                    }
 
-                task();
-            }
-        });
+                    task();
+                }
+            });
 }
 
 // add new work item to the pool
