@@ -236,7 +236,6 @@ private:
     InstanceDeviedClassWithArgs(bool Arg, int Arg2)
             : BaseClassWithArgs(Arg)
     {
-        spdlog::info("CALL ME!! {}", Arg2);
         m_ownArgs = Arg2;
     }
 
