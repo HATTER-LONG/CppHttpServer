@@ -5,7 +5,7 @@
 
 TEST_CASE("Try use threadpool", "[ThreadPool]")
 {
-    ThreadPool pool(4);
+    Tooling::ThreadPool pool(4);
     std::vector<std::future<int>> results;
 
     for (int i = 0; i < 8; i++)

@@ -21,7 +21,7 @@ using namespace std;
 
 static int socketReadTimeoutSeconds = 100;
 static int socketWriteTimeoutSeconds = 100;
-ThreadPool* threadPool;
+Tooling::ThreadPool* threadPool;
 /**
  * Struct to carry around connection (client)-specific data.
  */

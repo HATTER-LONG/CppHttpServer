@@ -13,7 +13,7 @@ namespace Tooling
  *
  * @tparam CustomProductType_t 产品基类类型
  */
-template <class CustomProductType_t>
+template <class CustomProductType_t, typename... TArgs>
 class IProductClassRegistrar
 {
 public:
@@ -22,7 +22,7 @@ public:
      *
      * @return std::unique_ptr<CustomProductType_t>
      */
-    virtual std::unique_ptr<CustomProductType_t> createProduct() = 0;
+    virtual std::unique_ptr<CustomProductType_t> createProduct(TArgs...) = 0;
 
     IProductClassRegistrar(const IProductClassRegistrar&) = delete;
     const IProductClassRegistrar& operator=(const IProductClassRegistrar&) = delete;
@@ -60,11 +60,11 @@ public:
      *
      * @return bool 是否插入成功
      */
-    bool registerClassWithId(IProductClassRegistrar<CustomProductType_t>* Registry, std::string ID)
+    bool registerClassWithId(void* Registry, std::string ID)
     {
         std::lock_guard<std::mutex> lk(m_mutex);
-        auto iter = m_mapProductClassRegistry.find(ID);
-        if (iter != m_mapProductClassRegistry.end())
+        auto iter = m_mProductClassRegistry.find(ID);
+        if (iter != m_mProductClassRegistry.end())
         {
             spdlog::warn("[{}] Error with Repeatedly insert the class with "
                          "ID[{}] into the factory, pls check it",
@@ -72,7 +72,7 @@ public:
 
             return false;
         }
-        m_mapProductClassRegistry[ID] = Registry;
+        m_mProductClassRegistry[ID] = static_cast<void*>(Registry);
         return true;
     }
 
@@ -82,12 +82,14 @@ public:
      * @param ID
      * @return std::unique_ptr<CustomProductType_t>
      */
-    std::unique_ptr<CustomProductType_t> getProductClass(std::string ID)
+    template <typename... TArgs>
+    std::unique_ptr<CustomProductType_t> getProductClass(std::string ID, TArgs&&... Args)
     {
         std::lock_guard<std::mutex> lk(m_mutex);
-        if (m_mapProductClassRegistry.find(ID) != m_mapProductClassRegistry.end())
+        if (m_mProductClassRegistry.find(ID) != m_mProductClassRegistry.end())
         {
-            return m_mapProductClassRegistry[ID]->createProduct();
+            return static_cast<IProductClassRegistrar<CustomProductType_t, TArgs&&...>*>(m_mProductClassRegistry[ID])
+                ->createProduct(Args...);
         }
         spdlog::warn("[{}] No product class found for ID[{}]", __FUNCTION__, ID.c_str());
         return std::unique_ptr<CustomProductType_t>(nullptr);
@@ -101,10 +103,10 @@ public:
     void removeProductClassByID(std::string ProduceId)
     {
         std::lock_guard<std::mutex> lk(m_mutex);
-        auto iter = m_mapProductClassRegistry.find(ProduceId);
-        if (iter != m_mapProductClassRegistry.end())
+        auto iter = m_mProductClassRegistry.find(ProduceId);
+        if (iter != m_mProductClassRegistry.end())
         {
-            m_mapProductClassRegistry.erase(iter);
+            m_mProductClassRegistry.erase(iter);
             return;
         }
         spdlog::warn("[{}] remove the produce ID[{}] register failed that not "
@@ -122,8 +124,7 @@ private:
      * @brief 保存注册过的产品，key:产品名字 , value:产品类型存
      *
      */
-    std::map<std::string, IProductClassRegistrar<CustomProductType_t>*> m_mapProductClassRegistry;
-
+    std::map<std::string, void*> m_mProductClassRegistry;
     /**
      * @brief 多线程同步锁，成本待考量
      *
@@ -138,8 +139,8 @@ private:
  * @tparam CustomProductType_t
  * @tparam CustomProductImpl_t
  */
-template <class CustomProductType_t, class CustomProductImpl_t>
-class ProductClassRegistrar : IProductClassRegistrar<CustomProductType_t>
+template <class CustomProductType_t, class CustomProductImpl_t, typename... TArgs>
+class ProductClassRegistrar : IProductClassRegistrar<CustomProductType_t, TArgs&&...>
 {
 public:
     /**
@@ -150,11 +151,12 @@ public:
     explicit ProductClassRegistrar(std::string ID)
             : m_customProductImplId(ID)
     {
-        m_needDelete = ProductClassFactory<CustomProductType_t>::instance().registerClassWithId(this, ID);
+        m_needDelete = ProductClassFactory<CustomProductType_t>::instance().registerClassWithId(static_cast<void*>(this), ID);
     }
     /**
      * @brief 删除析构掉的产品注册器 Destroy the Product Class Registrar object
-     * TODO:[不应该在注册器中保存过多的信息，应该提供出基类模板供所有产品继承用于提供获取 produceID 信息]
+     * TODO:[不应该在注册器中保存过多的信息，应该提供出基类模板供所有产品继承用于提供获取
+     * produceID 信息]
      */
     ~ProductClassRegistrar()
     {
@@ -166,9 +168,9 @@ public:
      *
      * @return std::unique_ptr<CustomProductType_t>
      */
-    std::unique_ptr<CustomProductType_t> createProduct()
+    std::unique_ptr<CustomProductType_t> createProduct(TArgs&&... Args) override
     {
-        return std::unique_ptr<CustomProductType_t>(std::make_unique<CustomProductImpl_t>());
+        return std::unique_ptr<CustomProductType_t>(std::make_unique<CustomProductImpl_t>(std::forward<TArgs>(Args)...));
     }
 
 private:
