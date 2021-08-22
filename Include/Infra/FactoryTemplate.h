@@ -94,7 +94,29 @@ public:
         spdlog::warn("[{}] No product class found for ID[{}]", __FUNCTION__, ID.c_str());
         return std::unique_ptr<CustomProductType_t>(nullptr);
     }
-
+    /**
+     * @brief Get the Instace Product Class object
+     *
+     * @param ID
+     * @return std::shared_ptr<CustomProductType_t>
+     */
+    template <typename... TArgs>
+    std::shared_ptr<CustomProductType_t> getInstanceProductClass(std::string ID, TArgs&&... Args)
+    {
+        std::lock_guard<std::mutex> lk(m_mutex);
+        if (m_mProductClassRegistry.find(ID) != m_mProductClassRegistry.end())
+        {
+            auto ptr = static_cast<IProductClassRegistrar<CustomProductType_t, TArgs&&...>*>(m_mProductClassRegistry[ID])
+                           ->createProduct(Args...);
+            return std::shared_ptr<CustomProductType_t>(ptr.release(),
+                [](CustomProductType_t*)
+                {
+                    // avoid delete instance ptr
+                });
+        }
+        spdlog::warn("[{}] No product class found for ID[{}]", __FUNCTION__, ID.c_str());
+        return std::shared_ptr<CustomProductType_t>(nullptr);
+    }
 
     /**
      * @brief 删除一个已注册的产品注册生成器
@@ -133,11 +155,10 @@ private:
 };
 
 /**
- * @brief 产品注册模板类，用于创建具体产品和从工厂里注册产品 模板参数 CustomProductType_t
- * 表示的类是产品抽象类（基类），CustomProductImpl_t 表示的类是具体产品（产品种类的子类）
+ * @brief 产品注册模板类，用于创建具体产品和从工厂里注册产品
  *
- * @tparam CustomProductType_t
- * @tparam CustomProductImpl_t
+ * @tparam CustomProductType_t 类是产品抽象类（基类）
+ * @tparam CustomProductImpl_t 类是具体产品（产品种类的子类）
  */
 template <class CustomProductType_t, class CustomProductImpl_t, typename... TArgs>
 class ProductClassRegistrar : IProductClassRegistrar<CustomProductType_t, TArgs&&...>
@@ -171,6 +192,64 @@ public:
     std::unique_ptr<CustomProductType_t> createProduct(TArgs&&... Args) override
     {
         return std::unique_ptr<CustomProductType_t>(std::make_unique<CustomProductImpl_t>(std::forward<TArgs>(Args)...));
+    }
+
+private:
+    std::string m_customProductImplId;
+    bool m_needDelete;
+};
+
+/**
+ * @brief 单例产品注册模板类，用于创建具体产品单例和从工厂里注册产品
+ * 需要具体产品实现 静态 instance 方法 //TODO: 侵入式，待优化
+ * ex:
+ *     class A: public Base
+ *     {
+ *          static A* instance(Arg...)
+ *          {
+ *              static A* o = new A(Arg...);
+ *              return o;
+ *          }
+ *          ........
+ *     }
+ *
+ * @tparam CustomProductType_t 类是产品抽象类（基类）
+ * @tparam CustomProductImpl_t 类是具体产品（产品种类的子类）
+ */
+template <class CustomProductType_t, class CustomProductImpl_t, typename... TArgs>
+class InstanceProductClassRegistrar : IProductClassRegistrar<CustomProductType_t, TArgs&&...>
+{
+public:
+    /**
+     * @brief Construct a new Product Class Registrar object
+     *
+     * @param ID
+     */
+    explicit InstanceProductClassRegistrar(std::string ID)
+            : m_customProductImplId(ID)
+    {
+        m_needDelete = ProductClassFactory<CustomProductType_t>::instance().registerClassWithId(static_cast<void*>(this), ID);
+    }
+
+    /**
+     * @brief 删除析构掉的产品注册器 Destroy the Product Class Registrar object
+     * TODO:[不应该在注册器中保存过多的信息，应该提供出基类模板供所有产品继承用于提供获取
+     * produceID 信息]
+     */
+    ~InstanceProductClassRegistrar()
+    {
+        if (m_needDelete)
+            ProductClassFactory<CustomProductType_t>::instance().removeProductClassByID(m_customProductImplId);
+    }
+
+    /**
+     * @brief Get Instance Product object
+     *
+     * @return std::unique_ptr<CustomProductType_t>
+     */
+    std::unique_ptr<CustomProductType_t> createProduct(TArgs&&... Args) override
+    {
+        return std::unique_ptr<CustomProductType_t>(CustomProductImpl_t::instance(std::forward<TArgs>(Args)...));
     }
 
 private:

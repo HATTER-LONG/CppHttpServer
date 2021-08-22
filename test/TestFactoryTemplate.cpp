@@ -179,15 +179,13 @@ TEST_CASE("Test the factory template function of mult arguments", "[factory temp
             THEN("Check target argument")
             {
                 REQUIRE(oneProduct4DerivedClass->m_hasArgs);
-                // NOTE: error: use of dynamic_cast requires -frtti， Clang 性能原因关闭 frtti
+                // FIXME: error: use of dynamic_cast requires -frtti， Clang 性能原因关闭 frtti
                 auto* ptr = static_cast<DeviedClassWithArgs*>(oneProduct4DerivedClass.get());
                 REQUIRE(ptr->m_ownArgs == resultInt);
             }
         }
     }
 }
-
-
 
 TEST_CASE("Test the factory template function mulithread env get product", "[factory template test]")
 {
@@ -216,6 +214,63 @@ TEST_CASE("Test the factory template function mulithread env get product", "[fac
                     workers.enqueue(getProductF, i);
             }
             workers.notifyAllThreads();
+        }
+    }
+}
+
+class InstanceDeviedClassWithArgs : public BaseClassWithArgs
+{
+public:
+    static InstanceDeviedClassWithArgs* instance(bool Arg, int Arg2)
+    {
+        static InstanceDeviedClassWithArgs* o = new InstanceDeviedClassWithArgs(Arg, Arg2);
+        return o;
+    }
+
+private:
+    InstanceDeviedClassWithArgs(bool Arg)
+            : BaseClassWithArgs(Arg)
+    {
+    }
+
+    InstanceDeviedClassWithArgs(bool Arg, int Arg2)
+            : BaseClassWithArgs(Arg)
+    {
+        spdlog::info("CALL ME!! {}", Arg2);
+        m_ownArgs = Arg2;
+    }
+
+
+    ~InstanceDeviedClassWithArgs() override = default;
+
+public:
+    std::string getClassProductId() override { return productId(); }
+    static std::string productId() { return "InstanceDeviedClassWithArgsProduct"; }
+
+    int m_ownArgs { -1 };
+};
+
+TEST_CASE("Test the factory template get instance product", "[factory template test]")
+{
+    GIVEN("Factory without products")
+    {
+        WHEN("Regist a product with instance factory template")
+        {
+            Tooling::InstanceProductClassRegistrar<class BaseClassWithArgs, class InstanceDeviedClassWithArgs, bool, int>
+                resgistProduct(InstanceDeviedClassWithArgs::productId());
+            bool arg1 = true;
+            int arg2 = 20;
+            THEN("Try get a instance product")
+            {
+                auto oneProduct4DerivedClass =
+                    Tooling::ProductClassFactory<BaseClassWithArgs>::instance().getInstanceProductClass(
+                        InstanceDeviedClassWithArgs::productId(), arg1, arg2);
+                REQUIRE(oneProduct4DerivedClass.get() == InstanceDeviedClassWithArgs::instance(true, 2));
+                REQUIRE(oneProduct4DerivedClass->m_hasArgs == arg1);
+                // FIXME: error: use of dynamic_cast requires -frtti， Clang 性能原因关闭 frtti
+                auto* ptr = static_cast<InstanceDeviedClassWithArgs*>(oneProduct4DerivedClass.get());
+                REQUIRE(ptr->m_ownArgs == arg2);
+            }
         }
     }
 }
