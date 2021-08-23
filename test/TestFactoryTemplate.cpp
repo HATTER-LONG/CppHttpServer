@@ -253,12 +253,12 @@ TEST_CASE("Test the factory template get instance product", "[factory template t
 {
     GIVEN("Factory without products")
     {
+        bool arg1 = true;
+        int arg2 = 20;
         WHEN("Regist a product with instance factory template")
         {
             Tooling::InstanceProductClassRegistrar<class BaseClassWithArgs, class InstanceDeviedClassWithArgs, bool, int>
                 resgistProduct(InstanceDeviedClassWithArgs::productId());
-            bool arg1 = true;
-            int arg2 = 20;
             THEN("Try get a instance product")
             {
                 auto oneProduct4DerivedClass =
@@ -269,6 +269,24 @@ TEST_CASE("Test the factory template get instance product", "[factory template t
                 // FIXME: error: use of dynamic_cast requires -frtti， Clang 性能原因关闭 frtti
                 auto* ptr = static_cast<InstanceDeviedClassWithArgs*>(oneProduct4DerivedClass.get());
                 REQUIRE(ptr->m_ownArgs == arg2);
+            }
+        }
+        WHEN("Second Regist the same product")
+        {
+            Tooling::InstanceProductClassRegistrar<class BaseClassWithArgs, class InstanceDeviedClassWithArgs, bool, int>
+                resgistProduct(InstanceDeviedClassWithArgs::productId());
+            THEN("Try get the product")
+            {
+                auto oneProduct4DerivedClass =
+                    Tooling::ProductClassFactory<BaseClassWithArgs>::instance().getInstanceProductClass(
+                        InstanceDeviedClassWithArgs::productId(), arg1, arg2);
+                REQUIRE(oneProduct4DerivedClass.get() == InstanceDeviedClassWithArgs::instance(true, 2));
+            }
+            THEN("Try get the product whit wrong method")
+            {
+                auto oneProduct4DerivedClass = Tooling::ProductClassFactory<BaseClassWithArgs>::instance().getProductClass(
+                    InstanceDeviedClassWithArgs::productId(), arg1, arg2);
+                REQUIRE(oneProduct4DerivedClass.get() == nullptr);
             }
         }
     }

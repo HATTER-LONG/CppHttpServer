@@ -60,20 +60,15 @@ public:
      *
      * @return bool 是否插入成功
      */
-    bool registerClassWithId(void* Registry, std::string ID)
+    bool registerClassWithId(void* Registry, const std::string& ID)
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
-        auto iter = m_mProductClassRegistry.find(ID);
-        if (iter != m_mProductClassRegistry.end())
-        {
-            spdlog::warn("[{}] Error with Repeatedly insert the class with "
-                         "ID[{}] into the factory, pls check it",
-                __FUNCTION__, ID.c_str());
-
-            return false;
-        }
-        m_mProductClassRegistry[ID] = static_cast<void*>(Registry);
-        return true;
+        std::lock_guard<std::mutex> lk(m_productMutex);
+        return registProductor(m_mProductClassRegistry, Registry, ID);
+    }
+    bool registerInstanceWithId(void* Registry, const std::string& ID)
+    {
+        std::lock_guard<std::mutex> lk(m_instanceMutex);
+        return registProductor(m_mInstanceProductRegistry, Registry, ID);
     }
 
     /**
@@ -85,7 +80,7 @@ public:
     template <typename... TArgs>
     std::unique_ptr<CustomProductType_t> getProductClass(std::string ID, TArgs&&... Args)
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
+        std::lock_guard<std::mutex> lk(m_productMutex);
         if (m_mProductClassRegistry.find(ID) != m_mProductClassRegistry.end())
         {
             return static_cast<IProductClassRegistrar<CustomProductType_t, TArgs&&...>*>(m_mProductClassRegistry[ID])
@@ -103,10 +98,10 @@ public:
     template <typename... TArgs>
     std::shared_ptr<CustomProductType_t> getInstanceProductClass(std::string ID, TArgs&&... Args)
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
-        if (m_mProductClassRegistry.find(ID) != m_mProductClassRegistry.end())
+        std::lock_guard<std::mutex> lk(m_instanceMutex);
+        if (m_mInstanceProductRegistry.find(ID) != m_mInstanceProductRegistry.end())
         {
-            auto ptr = static_cast<IProductClassRegistrar<CustomProductType_t, TArgs&&...>*>(m_mProductClassRegistry[ID])
+            auto ptr = static_cast<IProductClassRegistrar<CustomProductType_t, TArgs&&...>*>(m_mInstanceProductRegistry[ID])
                            ->createProduct(Args...);
             return std::shared_ptr<CustomProductType_t>(ptr.release(),
                 [](CustomProductType_t*)
@@ -122,36 +117,63 @@ public:
      * @brief 删除一个已注册的产品注册生成器
      * TODO:[此接口不应对外，本已实现当产品注册生成器生命周期终止时会自动删除此注册器，不应由使用者管理是否删除，可以通过派生类实现此接口对外基类隐藏]
      */
-    void removeProductClassByID(std::string ProduceId)
+    void removeProductClassByID(const std::string& ProduceId)
     {
-        std::lock_guard<std::mutex> lk(m_mutex);
-        auto iter = m_mProductClassRegistry.find(ProduceId);
-        if (iter != m_mProductClassRegistry.end())
-        {
-            m_mProductClassRegistry.erase(iter);
-            return;
-        }
-        spdlog::warn("[{}] remove the produce ID[{}] register failed that not "
-                     "found, pls check it",
-            __FUNCTION__, ProduceId.c_str());
+        std::lock_guard<std::mutex> lk(m_productMutex);
+        removeProductor(m_mProductClassRegistry, ProduceId);
     }
+    void removeInstanceProductByID(const std::string& ProduceId)
+    {
+        std::lock_guard<std::mutex> lk(m_instanceMutex);
+        removeProductor(m_mInstanceProductRegistry, ProduceId);
+    }
+
     ProductClassFactory(const ProductClassFactory&) = delete;
     const ProductClassFactory& operator=(const ProductClassFactory&) = delete;
 
 private:
     ProductClassFactory() = default;
     ~ProductClassFactory() = default;
+    using ProductMap = std::map<std::string, void*>;
+    bool registProductor(ProductMap& Map, void* Registry, const std::string& ID)
+    {
+        auto iter = Map.find(ID);
+        if (iter != Map.end())
+        {
+            spdlog::warn("[{}] Error with Repeatedly insert the class with "
+                         "ID[{}] into the factory, pls check it",
+                __FUNCTION__, ID.c_str());
 
+            return false;
+        }
+        Map[ID] = static_cast<void*>(Registry);
+        return true;
+    }
+
+    void removeProductor(ProductMap& Map, const std::string& ProduceId)
+    {
+        auto iter = Map.find(ProduceId);
+        if (iter != Map.end())
+        {
+            Map.erase(iter);
+            return;
+        }
+        spdlog::warn("[{}] remove the produce ID[{}] register failed that not "
+                     "found, pls check it",
+            __FUNCTION__, ProduceId.c_str());
+    }
     /**
      * @brief 保存注册过的产品，key:产品名字 , value:产品类型存
      *
      */
-    std::map<std::string, void*> m_mProductClassRegistry;
+    ProductMap m_mProductClassRegistry;
+    ProductMap m_mInstanceProductRegistry;
     /**
      * @brief 多线程同步锁，成本待考量
      *
      */
-    std::mutex m_mutex;
+    std::mutex m_productMutex;
+    std::mutex m_instanceMutex;
 };
 
 /**
@@ -228,7 +250,7 @@ public:
     explicit InstanceProductClassRegistrar(std::string ID)
             : m_customProductImplId(ID)
     {
-        m_needDelete = ProductClassFactory<CustomProductType_t>::instance().registerClassWithId(static_cast<void*>(this), ID);
+        m_needDelete = ProductClassFactory<CustomProductType_t>::instance().registerInstanceWithId(static_cast<void*>(this), ID);
     }
 
     /**
@@ -239,7 +261,7 @@ public:
     ~InstanceProductClassRegistrar()
     {
         if (m_needDelete)
-            ProductClassFactory<CustomProductType_t>::instance().removeProductClassByID(m_customProductImplId);
+            ProductClassFactory<CustomProductType_t>::instance().removeInstanceProductByID(m_customProductImplId);
     }
 
     /**
