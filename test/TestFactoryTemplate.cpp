@@ -179,8 +179,7 @@ TEST_CASE("Test the factory template function of mult arguments", "[factory temp
             THEN("Check target argument")
             {
                 REQUIRE(oneProduct4DerivedClass->m_hasArgs);
-                // FIXME: error: use of dynamic_cast requires -frtti， Clang 性能原因关闭 frtti
-                auto* ptr = static_cast<DeviedClassWithArgs*>(oneProduct4DerivedClass.get());
+                auto* ptr = dynamic_cast<DeviedClassWithArgs*>(oneProduct4DerivedClass.get());
                 REQUIRE(ptr->m_ownArgs == resultInt);
             }
         }
@@ -266,8 +265,7 @@ TEST_CASE("Test the factory template get instance product", "[factory template t
                         InstanceDeviedClassWithArgs::productId(), arg1, arg2);
                 REQUIRE(oneProduct4DerivedClass.get() == InstanceDeviedClassWithArgs::instance(true, 2));
                 REQUIRE(oneProduct4DerivedClass->m_hasArgs == arg1);
-                // FIXME: error: use of dynamic_cast requires -frtti， Clang 性能原因关闭 frtti
-                auto* ptr = static_cast<InstanceDeviedClassWithArgs*>(oneProduct4DerivedClass.get());
+                auto* ptr = dynamic_cast<InstanceDeviedClassWithArgs*>(oneProduct4DerivedClass.get());
                 REQUIRE(ptr->m_ownArgs == arg2);
             }
         }
