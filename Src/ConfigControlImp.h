@@ -23,13 +23,17 @@ public:
         static ConfigControlImp* o = new ConfigControlImp {};
         return o;
     }
-    ConfigControlImp();
 
     bool getConfig(std::string Name, JSON::json& Config);
 
     bool setConfig(std::string Name, JSON::json Config);
 
 private:
+    ConfigControlImp();
+    ~ConfigControlImp() = default;
+    ConfigControlImp(const ConfigControlImp&) = delete;
+    const ConfigControlImp& operator=(const ConfigControlImp&) = delete;
+
     std::string m_sConfigFilePath;
     JSON::json m_jsonConfig;
 };

@@ -33,32 +33,17 @@ TEST_CASE("test create config control instance", "[ConfigSL]")
         remove(path.c_str());
     SECTION("Test default config")
     {
-        ConfigControlImp configControl;
         json serverDefaultInfo;
-        bool result = configControl.getConfig("ServerInfo", serverDefaultInfo);
+        bool result = ConfigControlImp::instance()->getConfig("ServerInfo", serverDefaultInfo);
         REQUIRE(result);
         REQUIRE(DEFAULT_SERVER_INFO["ServerInfo"] == serverDefaultInfo);
     }
 
-    SECTION("Test config from file")
-    {
-        json testConfig = DEFAULT_SERVER_INFO;
-        testConfig["ServerInfo"]["IP"] = "0.0.0.0";
-        ofstream o(path);
-        o << setw(4) << testConfig << endl;
-        ConfigControlImp configControl;
-        json serverInfo;
-        bool result = configControl.getConfig("ServerInfo", serverInfo);
-        REQUIRE(result);
-        REQUIRE(testConfig["ServerInfo"] == serverInfo);
-    }
-
     SECTION("Test set config to file")
     {
-        ConfigControlImp configControl;
         json serverInfo = DEFAULT_SERVER_INFO["ServerInfo"];
         serverInfo["IP"] = "0.0.0.0";
-        bool result = configControl.setConfig("ServerInfo", serverInfo);
+        bool result = ConfigControlImp::instance()->setConfig("ServerInfo", serverInfo);
         REQUIRE(result);
         json readIn;
         std::ifstream in(path);
