@@ -9,6 +9,7 @@
 #include <spdlog/spdlog.h>
 #include <stdexcept>
 #include <thread>
+#include <unistd.h>
 #include <vector>
 
 class ThreadCompetition
