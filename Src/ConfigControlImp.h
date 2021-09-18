@@ -3,7 +3,7 @@
 
 namespace JSON = nlohmann;
 
-namespace Tooling
+namespace ToolKit
 {
 const JSON::json DEFAULT_SERVER_INFO = R"({
         "ServerInfo":{
@@ -39,4 +39,4 @@ private:
 };
 
 
-}   // namespace Tooling
+}   // namespace ToolKit

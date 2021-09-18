@@ -1,7 +1,7 @@
 #include "HttpServer.h"
 #include "spdlog/spdlog.h"
 
-using namespace Tooling;
+using namespace ToolKit;
 using namespace spdlog;
 
 int main(int argc, char* argv[])

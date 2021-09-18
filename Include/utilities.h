@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-namespace Tooling
+namespace ToolKit
 {
 /**
  * @brief Include directories for standard headers
@@ -12,4 +12,4 @@ std::string const CONFIG_FILE_PATH(CONFIGFILE_FULLPATH);
 #else
 std::string const CONFIG_FILE_PATH;
 #endif
-}   // namespace Tooling
+}   // namespace ToolKit

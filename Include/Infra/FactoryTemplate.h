@@ -6,7 +6,7 @@
 #include <mutex>
 #include <string>
 
-namespace Tooling
+namespace ToolKit
 {
 /**
  * @brief 工厂产品注册基类
@@ -278,4 +278,4 @@ private:
     std::string m_customProductImplId;
     bool m_needDelete;
 };
-}   // namespace Tooling
+}   // namespace ToolKit

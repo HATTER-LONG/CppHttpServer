@@ -10,7 +10,7 @@
 #include <iomanip>
 #include <unistd.h>
 using namespace JSON;
-using namespace Tooling;
+using namespace ToolKit;
 using namespace std;
 
 TEST_CASE("test write and read a Json file", "[ConfigSL]")

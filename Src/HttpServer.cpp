@@ -21,7 +21,7 @@ using namespace std;
 
 static int socketReadTimeoutSeconds = 100;
 static int socketWriteTimeoutSeconds = 100;
-Tooling::ThreadPool* threadPool;
+ToolKit::ThreadPool* threadPool;
 /**
  * Struct to carry around connection (client)-specific data.
  */
@@ -139,7 +139,7 @@ static void acceptErrorCb(struct evconnlistener* Listener, void* Ctx)
     event_base_loopexit(base, NULL);
 }
 
-namespace Tooling
+namespace ToolKit
 {
 HttpServer::HttpServer()
 {
@@ -192,4 +192,4 @@ void HttpServer::run()
     event_base_free(base);
     evconnlistener_free(listener);
 }
-}   // namespace Tooling
+}   // namespace ToolKit

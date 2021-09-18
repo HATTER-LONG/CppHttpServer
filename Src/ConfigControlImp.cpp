@@ -1,11 +1,12 @@
 #include "ConfigControlImp.h"
+
 #include "utilities.h"
 
 #include <fstream>
 #include <iomanip>
 #include <unistd.h>
 using namespace std;
-namespace Tooling
+namespace ToolKit
 {
 ConfigControlImp::ConfigControlImp()
         : m_sConfigFilePath(CONFIG_FILE_PATH + "Config.json")
@@ -33,4 +34,4 @@ bool ConfigControlImp::setConfig(std::string Name, JSON::json Config)
     o << setw(4) << m_jsonConfig << endl;
     return true;
 }
-}   // namespace Tooling
+}   // namespace ToolKit

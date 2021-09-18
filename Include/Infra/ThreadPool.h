@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <thread>
 #include <vector>
-namespace Tooling
+namespace ToolKit
 {
 class ThreadPool
 {
@@ -90,4 +90,4 @@ inline ThreadPool::~ThreadPool()
     for (std::thread& worker : m_workers)
         worker.join();
 }
-}   // namespace Tooling
+}   // namespace ToolKit

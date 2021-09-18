@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Tooling
+namespace ToolKit
 {
 /*
 class ConfigManager
@@ -20,4 +20,4 @@ public:
         JSON::json m_jsonConfig;
     };
 };*/
-}   // namespace Tooling
+}   // namespace ToolKit

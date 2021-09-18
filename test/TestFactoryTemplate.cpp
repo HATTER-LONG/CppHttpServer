@@ -41,7 +41,7 @@ public:
     static std::string productId() { return "DerivedAnotherClassProduct"; }
 };
 
-using g_BaseClassFactory = Tooling::ProductClassFactory<class BaseClass>;
+using g_BaseClassFactory = ToolKit::ProductClassFactory<class BaseClass>;
 
 TEST_CASE("Test an empty factory template function", "[factory template test]")
 {
@@ -54,7 +54,7 @@ TEST_CASE("Test an empty factory template function", "[factory template test]")
         }
         WHEN("regist DerivedClass Product to Factory")
         {
-            Tooling::ProductClassRegistrar<class BaseClass, class DerivedClass> registProduct(DerivedClass::productId());
+            ToolKit::ProductClassRegistrar<class BaseClass, class DerivedClass> registProduct(DerivedClass::productId());
             THEN("Try get a DerivedClass Product and check return value")
             {
                 auto oneProduct4DerivedClass = g_BaseClassFactory::instance().getProductClass(DerivedClass::productId());
@@ -74,10 +74,10 @@ TEST_CASE("Test the factory template function of a product", "[factory template 
 {
     GIVEN("Factory with a product")
     {
-        Tooling::ProductClassRegistrar<class BaseClass, class DerivedClass> registProduct(DerivedClass::productId());
+        ToolKit::ProductClassRegistrar<class BaseClass, class DerivedClass> registProduct(DerivedClass::productId());
         WHEN("Register another product to the factory")
         {
-            Tooling::ProductClassRegistrar<class BaseClass, class DerivedAnotherClass> registanotherProduct(
+            ToolKit::ProductClassRegistrar<class BaseClass, class DerivedAnotherClass> registanotherProduct(
                 DerivedAnotherClass::productId());
             THEN("Gets the product with new Product ID and verifies return values")
             {
@@ -95,7 +95,7 @@ TEST_CASE("Test the factory template function of a product", "[factory template 
         }
         WHEN("Register a product with a duplicate name to the factory")
         {
-            Tooling::ProductClassRegistrar<class BaseClass, class DerivedAnotherClass> registanotherProduct(
+            ToolKit::ProductClassRegistrar<class BaseClass, class DerivedAnotherClass> registanotherProduct(
                 DerivedClass::productId());
             THEN("Gets the product with the duplicate name and verifies that it was not inserted successfully")
             {
@@ -144,13 +144,13 @@ public:
 
     int m_ownArgs { -1 };
 };
-using g_BaseClassWithArgsFactory = Tooling::ProductClassFactory<class BaseClassWithArgs>;
+using g_BaseClassWithArgsFactory = ToolKit::ProductClassFactory<class BaseClassWithArgs>;
 
 TEST_CASE("Test the factory template function of one argument", "[factory template test]")
 {
     GIVEN("Factory with a product has one arg")
     {
-        Tooling::ProductClassRegistrar<class BaseClassWithArgs, class DeviedClassWithArgs, bool> resgistProduct(
+        ToolKit::ProductClassRegistrar<class BaseClassWithArgs, class DeviedClassWithArgs, bool> resgistProduct(
             DeviedClassWithArgs::productId());
 
         WHEN("Get a product with one args")
@@ -167,7 +167,7 @@ TEST_CASE("Test the factory template function of mult arguments", "[factory temp
 {
     GIVEN("Factory with a product has mult arg")
     {
-        Tooling::ProductClassRegistrar<class BaseClassWithArgs, class DeviedClassWithArgs, bool, int> resgistProduct {
+        ToolKit::ProductClassRegistrar<class BaseClassWithArgs, class DeviedClassWithArgs, bool, int> resgistProduct {
             DeviedClassWithArgs::productId()
         };
         WHEN("Get a product with mult args")
@@ -194,11 +194,11 @@ TEST_CASE("Test the factory template function mulithread env get product", "[fac
         REQUIRE(ret != nullptr);
     };
     auto registProductF = []
-    { Tooling::ProductClassRegistrar<class BaseClass, class DerivedClass> registProduct(DerivedClass::productId()); };
+    { ToolKit::ProductClassRegistrar<class BaseClass, class DerivedClass> registProduct(DerivedClass::productId()); };
 
     GIVEN("Factory with a product")
     {
-        Tooling::ProductClassRegistrar<class BaseClass, class DerivedClass> registProduct(DerivedClass::productId());
+        ToolKit::ProductClassRegistrar<class BaseClass, class DerivedClass> registProduct(DerivedClass::productId());
         WHEN("Registration and acquisition occur at the same time ")
         {
             const auto threadsnum = 5;
@@ -256,12 +256,12 @@ TEST_CASE("Test the factory template get instance product", "[factory template t
         int arg2 = 20;
         WHEN("Regist a product with instance factory template")
         {
-            Tooling::InstanceProductClassRegistrar<class BaseClassWithArgs, class InstanceDeviedClassWithArgs, bool, int>
+            ToolKit::InstanceProductClassRegistrar<class BaseClassWithArgs, class InstanceDeviedClassWithArgs, bool, int>
                 resgistProduct(InstanceDeviedClassWithArgs::productId());
             THEN("Try get a instance product")
             {
                 auto oneProduct4DerivedClass =
-                    Tooling::ProductClassFactory<BaseClassWithArgs>::instance().getInstanceProductClass(
+                    ToolKit::ProductClassFactory<BaseClassWithArgs>::instance().getInstanceProductClass(
                         InstanceDeviedClassWithArgs::productId(), arg1, arg2);
                 REQUIRE(oneProduct4DerivedClass.get() == InstanceDeviedClassWithArgs::instance(true, 2));
                 REQUIRE(oneProduct4DerivedClass->m_hasArgs == arg1);
@@ -271,18 +271,18 @@ TEST_CASE("Test the factory template get instance product", "[factory template t
         }
         WHEN("Second Regist the same product")
         {
-            Tooling::InstanceProductClassRegistrar<class BaseClassWithArgs, class InstanceDeviedClassWithArgs, bool, int>
+            ToolKit::InstanceProductClassRegistrar<class BaseClassWithArgs, class InstanceDeviedClassWithArgs, bool, int>
                 resgistProduct(InstanceDeviedClassWithArgs::productId());
             THEN("Try get the product")
             {
                 auto oneProduct4DerivedClass =
-                    Tooling::ProductClassFactory<BaseClassWithArgs>::instance().getInstanceProductClass(
+                    ToolKit::ProductClassFactory<BaseClassWithArgs>::instance().getInstanceProductClass(
                         InstanceDeviedClassWithArgs::productId(), arg1, arg2);
                 REQUIRE(oneProduct4DerivedClass.get() == InstanceDeviedClassWithArgs::instance(true, 2));
             }
             THEN("Try get the product whit wrong method")
             {
-                auto oneProduct4DerivedClass = Tooling::ProductClassFactory<BaseClassWithArgs>::instance().getProductClass(
+                auto oneProduct4DerivedClass = ToolKit::ProductClassFactory<BaseClassWithArgs>::instance().getProductClass(
                     InstanceDeviedClassWithArgs::productId(), arg1, arg2);
                 REQUIRE(oneProduct4DerivedClass.get() == nullptr);
             }
